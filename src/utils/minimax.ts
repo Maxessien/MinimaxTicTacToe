@@ -33,11 +33,11 @@ class Node {
     ];
     const newNodes: Node[] = []
     for (const field of boardFields){
-      if (!state[bMap[field].row][bMap[field].row]){
+      if (!state[bMap[field].row][bMap[field].col]){
         const newBoard = new Board()
         const player = new Player(nextLevelPlayer.type, nextLevelPlayer.val, newBoard)
-        const branchBoardState = state
-        branchBoardState[bMap[field].row][bMap[field].row] = player
+        const branchBoardState = structuredClone(state)
+        branchBoardState[bMap[field].row][bMap[field].col] = player
         newBoard.setState(branchBoardState)
         newNodes.push(new Node(this, null, nextLevelPlayer.type, newBoard))
       }

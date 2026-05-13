@@ -28,15 +28,15 @@ export interface BoardFieldVal {
 }
 
 const boardMap: BoardMap = {
-  a1: { row: 1, col: 1 },
-  b1: { row: 1, col: 2 },
-  c1: { row: 1, col: 3 },
-  a2: { row: 2, col: 1 },
-  b2: { row: 2, col: 2 },
-  c2: { row: 2, col: 3 },
-  a3: { row: 3, col: 1 },
-  b3: { row: 3, col: 2 },
-  c3: { row: 3, col: 3 },
+  a1: { row: 0, col: 0 },
+  b1: { row: 0, col: 1 },
+  c1: { row: 0, col: 2 },
+  a2: { row: 1, col: 0 },
+  b2: { row: 1, col: 1 },
+  c2: { row: 1, col: 2 },
+  a3: { row: 2, col: 0 },
+  b3: { row: 2, col: 1 },
+  c3: { row: 2, col: 2 },
 };
 
 const initialBoardState: BoardState = [
@@ -157,4 +157,5 @@ class BoardWithPlayers extends Board {
   }
 }
 
-export { Board, Player, BoardWithPlayers };
+export { Board, BoardWithPlayers, Player };
+
