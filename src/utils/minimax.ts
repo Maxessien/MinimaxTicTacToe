@@ -17,7 +17,7 @@ class Node {
     this.parent = parent;
     this.levelPlayer = levelPlayer;
     this.board = board;
-    this.isLeaf = board.checkStateValue() === null;
+    this.isLeaf = board.checkStateValue() !== null;
     this.isRoot = !parent;
   }
 
@@ -47,5 +47,20 @@ class Node {
   }
 }
 
-export { Node };
+class Tree {
+  rootNode: Node
+  nodes: Node[]
+
+  constructor(){
+    this.nodes = []
+    this.rootNode = new Node(null, null, "Maximizer", new Board())
+  }
+
+  buildTree(node: Node){
+    const nodes = node.createChildren()
+    if (nodes) nodes.forEach((n)=> this.buildTree(n))
+  }
+}
+
+export { Node, Tree };
 
