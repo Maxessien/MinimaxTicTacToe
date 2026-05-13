@@ -83,7 +83,7 @@ class Board {
   }
 
   getState(): BoardState {
-    return this.state;
+    return structuredClone(this.state);
   }
 
   setState(newState: BoardState){
@@ -91,7 +91,7 @@ class Board {
   }
 
   getMap(): BoardMap {
-    return this.boardMap;
+    return structuredClone(this.boardMap);
   }
 
   addValue(position: BoardRowsCols, val: Player): MethodResponse {
