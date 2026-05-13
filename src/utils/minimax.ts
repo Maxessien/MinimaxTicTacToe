@@ -58,7 +58,10 @@ class Tree {
 
   buildTree(node: Node){
     const nodes = node.createChildren()
-    if (nodes) nodes.forEach((n)=> this.buildTree(n))
+    if (nodes) nodes.forEach((n)=> {
+      this.nodes.push(n)
+      this.buildTree(n)
+    })
   }
 }
 
