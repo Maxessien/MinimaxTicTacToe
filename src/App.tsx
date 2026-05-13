@@ -34,14 +34,17 @@ const App = () => {
   const resetGame = () => {
     board.resetBoard();
     setCurrentPlayer({ player: board.getPlayers()[0], idx: 0 });
-    console.log(board.getState())
+    console.log(board.getState());
     setBoardState({ state: board.getState(), value: board.checkStateValue() });
   };
 
   return (
     <>
       {boardState.value && (
-        <LeafStatPopup onRestart={resetGame} status={valueMap[boardState.value.toString()]} />
+        <LeafStatPopup
+          onRestart={resetGame}
+          status={valueMap[boardState.value.toString()]}
+        />
       )}
       <div className="min-h-screen bg-linear-to-br from-(--bg-app-from) via-(--bg-app-via) to-(--bg-app-to) flex items-center justify-center font-sans text-white p-4">
         <div className="max-w-md w-full flex flex-col items-center gap-8">
