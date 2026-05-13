@@ -11,16 +11,19 @@ type BoardRowsCols =
 
 type BoardValue = "X" | "O";
 
-type BoardState = Record<
-  BoardRowsCols,
-  { row: number; col: number; value: BoardValue | null }
->;
+type BoardState = Record<BoardRowsCols, BoardFieldVal>;
 
 export type PlayerType = "Minimizer" | "Maximizer";
 
 interface MethodResponse {
   success: boolean;
   message: string;
+}
+
+interface BoardFieldVal {
+  row: number;
+  col: number;
+  value: Player | null;
 }
 
 const initialBoardState: BoardState = {
@@ -40,19 +43,21 @@ class Player extends EventTarget {
   readonly type: PlayerType;
   readonly val: BoardValue;
   readonly board: Board;
+  readonly goalScore: -1 | 1;
 
   constructor(type: PlayerType, val: BoardValue, board: Board) {
     super();
     this.type = type;
     this.val = val;
     this.board = board;
+    this.goalScore = type === "Maximizer" ? 1 : -1;
     this.hasTurn = false;
   }
 
   play(position: BoardRowsCols): MethodResponse {
     if (!this.hasTurn) return { message: "Not Your Turn", success: false };
 
-    const val = this.board.addValue(position, this.val);
+    const val = this.board.addValue(position, this);
     if (val.success) this.hasTurn = false;
 
     const event = new CustomEvent("just_played");
@@ -70,7 +75,7 @@ class Board {
     this.state = initState;
     this.player1 = new Player("Maximizer", "X", this);
     this.player2 = new Player("Minimizer", "O", this);
-    
+
     this.player1.addEventListener("just_played", () => {
       this.player2.hasTurn = true;
     });
@@ -87,7 +92,7 @@ class Board {
     return [this.player1, this.player2];
   }
 
-  addValue(position: BoardRowsCols, val: BoardValue): MethodResponse {
+  addValue(position: BoardRowsCols, val: Player): MethodResponse {
     if (!this.state[position])
       return { message: "Position doesn't exists", success: false };
     if (this.state[position].value)
@@ -95,8 +100,49 @@ class Board {
     this.state[position].value = val;
     return { message: "Finished", success: true };
   }
-  checkStateVal(): 0 | 1 | -1 {
-    return 0;
+  private flatten() {
+    const { a1, a2, a3, b1, b2, b3, c1, c2, c3 } = this.state;
+    const rows = [
+      [a1, b1, c1],
+      [a2, b2, c2],
+      [a3, b3, c3],
+    ];
+    const cols = [
+      [a1, a2, a3],
+      [b1, b2, b3],
+      [c1, c2, c3],
+    ];
+    const diagonals = [
+      [a1, b2, c3],
+      [c1, b2, a3],
+    ];
+
+    return { rows, cols, diagonals };
+  }
+
+  private analyse2D(vals: BoardFieldVal[][]) {
+    for (const val of vals) {
+      if (val.some((r) => !r.value)) continue;
+      if (val.every((v) => v.value?.val === val[0].value?.val)) return val[0];
+    }
+    return null;
+  }
+
+  private stillHasMoves() {
+    const { a1, a2, a3, b1, b2, b3, c1, c2, c3 } = this.state;
+    const all = [a1, a2, a3, b1, b2, b3, c1, c2, c3];
+    return all.some(({ value }) => !value);
+  }
+
+  checkStateVal(): 0 | 1 | -1 | null {
+    const { cols, diagonals, rows } = this.flatten();
+    const diaVal = this.analyse2D(diagonals);
+    if (diaVal?.value) return diaVal.value?.goalScore;
+    const colVal = this.analyse2D(cols);
+    if (colVal?.value) return colVal.value?.goalScore;
+    const rowVal = this.analyse2D(rows);
+    if (rowVal?.value) return rowVal.value?.goalScore;
+    return this.stillHasMoves() ? 1 : 0;
   }
 }
 
