@@ -6,6 +6,30 @@ import {
   type PlayerType,
 } from "./board";
 
+
+class Tree {
+  rootNode: Node;
+  nodes: Node[];
+
+  constructor() {
+    this.nodes = [];
+    this.rootNode = new Node(null, [], "Maximizer", new Board());
+  }
+
+  buildTree(node: Node) {
+    const nodes = node.createChildren();
+    if (nodes)
+      nodes.forEach((n) => {
+        this.nodes.push(n);
+        this.buildTree(n);
+      });
+  }
+
+  computeOptimalPath(){
+    this.rootNode.computeOptimalChild()
+  }
+}
+
 class Node {
   levelPlayer: PlayerType;
   parent: Node | null;
@@ -93,25 +117,6 @@ class Node {
     this.optimalChild = node
     this.score = node.score
     return node.parent || node;
-  }
-}
-
-class Tree {
-  rootNode: Node;
-  nodes: Node[];
-
-  constructor() {
-    this.nodes = [];
-    this.rootNode = new Node(null, [], "Maximizer", new Board());
-  }
-
-  buildTree(node: Node) {
-    const nodes = node.createChildren();
-    if (nodes)
-      nodes.forEach((n) => {
-        this.nodes.push(n);
-        this.buildTree(n);
-      });
   }
 }
 

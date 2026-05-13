@@ -11,7 +11,7 @@ export type BoardRowsCols =
 
 export type BoardValue = "X" | "O";
 
-export type BoardState = Player[][] | null[][];
+export type BoardState = (Player[] | null[])[];
 
 export type BoardMap = Record<BoardRowsCols, BoardFieldVal>;
 
@@ -39,11 +39,13 @@ const boardMap: BoardMap = {
   c3: { row: 2, col: 2 },
 };
 
-const initialBoardState: BoardState = [
-  [null, null, null],
-  [null, null, null],
-  [null, null, null],
-];
+const getEmptyBoardState = (): BoardState => {
+  return [
+    [null, null, null],
+    [null, null, null],
+    [null, null, null],
+  ];
+};
 
 class Player extends EventTarget {
   hasTurn: boolean;
@@ -61,7 +63,7 @@ class Player extends EventTarget {
     this.hasTurn = false;
   }
 
-  play(position: BoardRowsCols): MethodResponse {
+  play(position: BoardFieldVal): MethodResponse {
     if (!this.hasTurn) return { message: "Not Your Turn", success: false };
 
     const val = this.board.addValue(position, this);
@@ -74,28 +76,28 @@ class Player extends EventTarget {
 }
 
 class Board {
-  private state: BoardState;
+  protected state: BoardState;
   private boardMap: BoardMap;
 
-  constructor(initState = initialBoardState) {
+  constructor(initState = getEmptyBoardState()) {
     this.state = initState;
     this.boardMap = boardMap;
   }
 
   getState(): BoardState {
-    return structuredClone(this.state);
+    return this.state.map((v) => v);
   }
 
-  setState(newState: BoardState){
-    this.state = newState
+  setState(newState: BoardState) {
+    this.state = newState;
   }
 
   getMap(): BoardMap {
     return structuredClone(this.boardMap);
   }
 
-  addValue(position: BoardRowsCols, val: Player): MethodResponse {
-    const map = this.boardMap[position];
+  addValue(position: BoardFieldVal, val: Player): MethodResponse {
+    const map = position;
     if (!map) return { message: "Position doesn't exists", success: false };
     if (this.state[map.row][map.col])
       return { message: "Position already has a value", success: false };
@@ -144,6 +146,8 @@ class BoardWithPlayers extends Board {
     this.player1 = new Player("Maximizer", "X", this);
     this.player2 = new Player("Minimizer", "O", this);
 
+    this.player1.hasTurn = true;
+
     this.player1.addEventListener("just_played", () => {
       this.player2.hasTurn = true;
     });
@@ -154,6 +158,12 @@ class BoardWithPlayers extends Board {
 
   getPlayers(): Player[] {
     return [this.player1, this.player2];
+  }
+
+  resetBoard() {
+    this.state = getEmptyBoardState();
+    this.player1.hasTurn = true
+    this.player2.hasTurn = false
   }
 }
 
