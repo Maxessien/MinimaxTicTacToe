@@ -1,4 +1,4 @@
-type BoardRowsCols =
+export type BoardRowsCols =
   | "a1"
   | "b1"
   | "c1"
@@ -9,9 +9,11 @@ type BoardRowsCols =
   | "b3"
   | "c3";
 
-type BoardValue = "X" | "O";
+export type BoardValue = "X" | "O";
 
-type BoardState = Record<BoardRowsCols, BoardFieldVal>;
+export type BoardState = Player[][] | null[][];
+
+export type BoardMap = Record<BoardRowsCols, BoardFieldVal>;
 
 export type PlayerType = "Minimizer" | "Maximizer";
 
@@ -20,23 +22,28 @@ interface MethodResponse {
   message: string;
 }
 
-interface BoardFieldVal {
+export interface BoardFieldVal {
   row: number;
   col: number;
-  value: Player | null;
 }
 
-const initialBoardState: BoardState = {
-  a1: { row: 1, col: 1, value: null },
-  b1: { row: 1, col: 2, value: null },
-  c1: { row: 1, col: 3, value: null },
-  a2: { row: 2, col: 1, value: null },
-  b2: { row: 2, col: 2, value: null },
-  c2: { row: 2, col: 3, value: null },
-  a3: { row: 3, col: 1, value: null },
-  b3: { row: 3, col: 2, value: null },
-  c3: { row: 3, col: 3, value: null },
+const boardMap: BoardMap = {
+  a1: { row: 1, col: 1 },
+  b1: { row: 1, col: 2 },
+  c1: { row: 1, col: 3 },
+  a2: { row: 2, col: 1 },
+  b2: { row: 2, col: 2 },
+  c2: { row: 2, col: 3 },
+  a3: { row: 3, col: 1 },
+  b3: { row: 3, col: 2 },
+  c3: { row: 3, col: 3 },
 };
+
+const initialBoardState: BoardState = [
+  [null, null, null],
+  [null, null, null],
+  [null, null, null],
+];
 
 class Player extends EventTarget {
   hasTurn: boolean;
@@ -68,11 +75,72 @@ class Player extends EventTarget {
 
 class Board {
   private state: BoardState;
-  private player1: Player;
-  private player2: Player;
+  private boardMap: BoardMap;
 
   constructor(initState = initialBoardState) {
     this.state = initState;
+    this.boardMap = boardMap;
+  }
+
+  getState(): BoardState {
+    return this.state;
+  }
+
+  setState(newState: BoardState){
+    this.state = newState
+  }
+
+  getMap(): BoardMap {
+    return this.boardMap;
+  }
+
+  addValue(position: BoardRowsCols, val: Player): MethodResponse {
+    const map = this.boardMap[position];
+    if (!map) return { message: "Position doesn't exists", success: false };
+    if (this.state[map.row][map.col])
+      return { message: "Position already has a value", success: false };
+    this.state[map.row][map.col] = val;
+    return { message: "Finished", success: true };
+  }
+
+  private getAllPossibleWinCom() {
+    const rowWins = [this.state[0], this.state[1], this.state[2]];
+    const colWins = [
+      [this.state[0][0], this.state[1][0], this.state[2][0]],
+      [this.state[0][1], this.state[1][1], this.state[2][1]],
+      [this.state[0][2], this.state[1][2], this.state[2][2]],
+    ];
+    const diagonalWins = [
+      [this.state[0][0], this.state[1][1], this.state[2][2]],
+      [this.state[0][2], this.state[1][1], this.state[2][0]],
+    ];
+
+    return [...rowWins, ...colWins, ...diagonalWins];
+  }
+
+  private getGoalPlayer(): Player | null {
+    const allWins = this.getAllPossibleWinCom();
+    for (const win of allWins) {
+      if (win.some((w) => !w)) continue;
+      else if (win.every((w) => w?.type === win[0]?.type)) return win[0];
+    }
+    return null;
+  }
+
+  checkStateValue(): 0 | 1 | -1 | null {
+    if (this.state.flat().every((v) => v)) return 0;
+    const goalPl = this.getGoalPlayer();
+    if (!goalPl) return null;
+    else return goalPl.goalScore;
+  }
+}
+
+class BoardWithPlayers extends Board {
+  private player1: Player;
+  private player2: Player;
+
+  constructor() {
+    super();
     this.player1 = new Player("Maximizer", "X", this);
     this.player2 = new Player("Minimizer", "O", this);
 
@@ -84,66 +152,9 @@ class Board {
     });
   }
 
-  getState(): BoardState {
-    return this.state;
-  }
-
   getPlayers(): Player[] {
     return [this.player1, this.player2];
   }
-
-  addValue(position: BoardRowsCols, val: Player): MethodResponse {
-    if (!this.state[position])
-      return { message: "Position doesn't exists", success: false };
-    if (this.state[position].value)
-      return { message: "Position already has a value", success: false };
-    this.state[position].value = val;
-    return { message: "Finished", success: true };
-  }
-  private flatten() {
-    const { a1, a2, a3, b1, b2, b3, c1, c2, c3 } = this.state;
-    const rows = [
-      [a1, b1, c1],
-      [a2, b2, c2],
-      [a3, b3, c3],
-    ];
-    const cols = [
-      [a1, a2, a3],
-      [b1, b2, b3],
-      [c1, c2, c3],
-    ];
-    const diagonals = [
-      [a1, b2, c3],
-      [c1, b2, a3],
-    ];
-
-    return { rows, cols, diagonals };
-  }
-
-  private analyse2D(vals: BoardFieldVal[][]) {
-    for (const val of vals) {
-      if (val.some((r) => !r.value)) continue;
-      if (val.every((v) => v.value?.val === val[0].value?.val)) return val[0];
-    }
-    return null;
-  }
-
-  private stillHasMoves() {
-    const { a1, a2, a3, b1, b2, b3, c1, c2, c3 } = this.state;
-    const all = [a1, a2, a3, b1, b2, b3, c1, c2, c3];
-    return all.some(({ value }) => !value);
-  }
-
-  checkStateVal(): 0 | 1 | -1 | null {
-    const { cols, diagonals, rows } = this.flatten();
-    const diaVal = this.analyse2D(diagonals);
-    if (diaVal?.value) return diaVal.value?.goalScore;
-    const colVal = this.analyse2D(cols);
-    if (colVal?.value) return colVal.value?.goalScore;
-    const rowVal = this.analyse2D(rows);
-    if (rowVal?.value) return rowVal.value?.goalScore;
-    return this.stillHasMoves() ? 1 : 0;
-  }
 }
 
-export { Board };
+export { Board, Player, BoardWithPlayers };
