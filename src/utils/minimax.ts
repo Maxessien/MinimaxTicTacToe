@@ -3,7 +3,7 @@ import { Board, Player, type BoardRowsCols, type BoardValue, type PlayerType } f
 class Node {
   levelPlayer: PlayerType;
   parent: Node | null;
-  children: Node[] | null;
+  private children: Node[] | null;
   isLeaf: boolean;
   isRoot: boolean;
   board: Board;
@@ -44,6 +44,10 @@ class Node {
     }
     this.children = newNodes
     return newNodes
+  }
+
+  getSiblings(){
+    
   }
 }
 
