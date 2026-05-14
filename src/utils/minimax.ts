@@ -1,4 +1,3 @@
-import equal from "fast-deep-equal/es6";
 import {
   Board,
   Player,
@@ -11,17 +10,14 @@ import {
 
 class Tree {
   rootNode: Node;
-  nodes: Node[];
 
   constructor(rootNode: Node) {
-    this.nodes = [];
     this.rootNode = rootNode;
   }
 
   buildTree(node: Node) {
     const nodes = node.createChildren();
-    if (nodes){
-    this.nodes = [...this.nodes, ...nodes]
+    if (nodes) {
       nodes.forEach((n) => {
         this.buildTree(n);
       });
@@ -156,12 +152,24 @@ class MinimaxBot extends Tree {
   }
 
   setNodeFromState(state: BoardState) {
-    for (const node of this.nodes) {
-      if (equal(state, node.board.getState())){
-        console.log(node)
-        this.currentNode = node
-        this.nextNode = null
-      }
+    const matchedChild = this.currentNode.children.find((child) => {
+      return child.board
+        .getState()
+        .every((c, idx) =>
+          c.every(
+            (innC, innIdx) =>{
+              console.log(idx, innIdx)
+              return (innC !== null && state[idx][innIdx] !== null) ||
+              (innC === null && state[idx][innIdx] === null)
+            }
+          ),
+        );
+    });
+
+    console.log(state, matchedChild);
+
+    if (matchedChild) {
+      this.currentNode = matchedChild;
     }
   }
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LeafStatePopup from "./LeafStatePopup";
 import { BoardWithPlayers, Player, type BoardFieldVal } from "./utils/board";
 import { MinimaxBot, Node } from "./utils/minimax";
@@ -8,6 +8,8 @@ const minimaxBot = new MinimaxBot(
   board.getPlayers()[0],
   new Node(null, [], board.getPlayers()[0].type, board),
 );
+
+
 
 const App = () => {
   const [boardState, setBoardState] = useState({
@@ -20,22 +22,29 @@ const App = () => {
     idx: 0,
   });
 
-  const play = (player: Player, position: BoardFieldVal) => {
-    player.play(position);
+  const updateState = () => {
     const newCurrplayerIdx = currentPlayer.idx === 0 ? 1 : 0;
     setCurrentPlayer({
       player: board.getPlayers()[1],
       idx: newCurrplayerIdx,
     });
     setBoardState({ state: board.getState(), value: board.checkStateValue() });
-    if (newCurrplayerIdx === 0) botPlay()
   };
 
-  const botPlay = ()=>{
-      minimaxBot.setNodeFromState(boardState.state)
-      const move = minimaxBot.makeMove()
-      if(move) play(minimaxBot.player, move)
-  }
+  const userPlay = (player: Player, position: BoardFieldVal) => {
+    player.play(position);
+    updateState();
+    botPlay();
+  };
+
+  const botPlay = () => {
+    console.log("Bot playing")
+    minimaxBot.setNodeFromState(board.getState());
+    const move = minimaxBot.makeMove();
+    console.log(move)
+    if (move) minimaxBot.player.play(move);
+    updateState();
+  };
 
   const valueMap: { [key: string]: "win" | "lose" | "draw" } = {
     "1": "win",
@@ -48,6 +57,10 @@ const App = () => {
     setCurrentPlayer({ player: board.getPlayers()[0], idx: 0 });
     setBoardState({ state: board.getState(), value: board.checkStateValue() });
   };
+
+  useEffect(() => {
+    botPlay();
+  }, []);
 
   return (
     <>
@@ -85,7 +98,7 @@ const App = () => {
                 Status
               </span>
               <span className="px-3 py-1 rounded-full bg-(--badge-bg) text-(--badge-text) text-xs font-bold border border-(--badge-border)">
-                {currentPlayer.idx === 0 ? "Your Turn" : "AI turn"}
+                {currentPlayer.idx === 1 ? "Your Turn" : "AI turn"}
               </span>
             </div>
 
@@ -111,7 +124,10 @@ const App = () => {
                     {/* Hover effect highlight */}
                     <div
                       onClickCapture={() =>
-                        play(currentPlayer.player, { col: cIndex, row: rIndex })
+                        userPlay(currentPlayer.player, {
+                          col: cIndex,
+                          row: rIndex,
+                        })
                       }
                       className="absolute inset-0 bg-linear-to-tr from-white/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
                     />
