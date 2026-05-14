@@ -1,11 +1,11 @@
 
 
-interface LeafStatPopupProps {
+interface LeafStatePopupProps {
   status: 'win' | 'lose' | 'draw';
   onRestart: () => void;
 }
 
-const LeafStatPopup = ({ status, onRestart }: LeafStatPopupProps) => {
+const LeafStatePopup = ({ status, onRestart }: LeafStatePopupProps) => {
   const content = {
     win: {
       title: 'Victory!',
@@ -63,4 +63,4 @@ const LeafStatPopup = ({ status, onRestart }: LeafStatPopupProps) => {
   );
 }
 
-export default LeafStatPopup;
+export default LeafStatePopup;

@@ -1,29 +1,41 @@
 import { useState } from "react";
-import LeafStatPopup from "./LeafStatPopup";
+import LeafStatePopup from "./LeafStatePopup";
 import { BoardWithPlayers, Player, type BoardFieldVal } from "./utils/board";
+import { MinimaxBot, Node } from "./utils/minimax";
 
 const board = new BoardWithPlayers();
+const minimaxBot = new MinimaxBot(
+  board.getPlayers()[0],
+  new Node(null, [], board.getPlayers()[0].type, board),
+);
 
 const App = () => {
   const [boardState, setBoardState] = useState({
     state: board.getState(),
     value: board.checkStateValue(),
   });
+
   const [currentPlayer, setCurrentPlayer] = useState({
-    player: board.getPlayers()[0],
+    player: board.getPlayers()[1],
     idx: 0,
   });
 
   const play = (player: Player, position: BoardFieldVal) => {
-    const p = player.play(position);
-    console.log(p);
+    player.play(position);
     const newCurrplayerIdx = currentPlayer.idx === 0 ? 1 : 0;
     setCurrentPlayer({
-      player: board.getPlayers()[newCurrplayerIdx],
+      player: board.getPlayers()[1],
       idx: newCurrplayerIdx,
     });
     setBoardState({ state: board.getState(), value: board.checkStateValue() });
+    if (newCurrplayerIdx === 0) botPlay()
   };
+
+  const botPlay = ()=>{
+      minimaxBot.setNodeFromState(boardState.state)
+      const move = minimaxBot.makeMove()
+      if(move) play(minimaxBot.player, move)
+  }
 
   const valueMap: { [key: string]: "win" | "lose" | "draw" } = {
     "1": "win",
@@ -34,14 +46,13 @@ const App = () => {
   const resetGame = () => {
     board.resetBoard();
     setCurrentPlayer({ player: board.getPlayers()[0], idx: 0 });
-    console.log(board.getState());
     setBoardState({ state: board.getState(), value: board.checkStateValue() });
   };
 
   return (
     <>
       {boardState.value && (
-        <LeafStatPopup
+        <LeafStatePopup
           onRestart={resetGame}
           status={valueMap[boardState.value.toString()]}
         />

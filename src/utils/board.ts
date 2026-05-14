@@ -93,7 +93,7 @@ class Board {
   }
 
   getMap(): BoardMap {
-    return structuredClone(this.boardMap);
+    return {...this.boardMap};
   }
 
   addValue(position: BoardFieldVal, val: Player): MethodResponse {
