@@ -11,7 +11,7 @@ export type BoardRowsCols =
 
 export type BoardValue = "X" | "O";
 
-export type BoardState = (Player[] | null[])[];
+export type BoardState = (PlayerType[] | null[])[];
 
 export type BoardMap = Record<BoardRowsCols, BoardFieldVal>;
 
@@ -85,7 +85,7 @@ class Board {
   }
 
   getState(): BoardState {
-    return this.state.map((v) => v);
+    return structuredClone(this.state);
   }
 
   setState(newState: BoardState) {
@@ -93,7 +93,7 @@ class Board {
   }
 
   getMap(): BoardMap {
-    return {...this.boardMap};
+    return structuredClone(this.boardMap);
   }
 
   addValue(position: BoardFieldVal, val: Player): MethodResponse {
@@ -101,7 +101,7 @@ class Board {
     if (!map) return { message: "Position doesn't exists", success: false };
     if (this.state[map.row][map.col])
       return { message: "Position already has a value", success: false };
-    this.state[map.row][map.col] = val;
+    this.state[map.row][map.col] = val.type;
     return { message: "Finished", success: true };
   }
 
@@ -120,11 +120,11 @@ class Board {
     return [...rowWins, ...colWins, ...diagonalWins];
   }
 
-  private getGoalPlayer(): Player | null {
+  private getGoalPlayer(): PlayerType | null {
     const allWins = this.getAllPossibleWinCom();
     for (const win of allWins) {
       if (win.some((w) => !w)) continue;
-      else if (win.every((w) => w?.type === win[0]?.type)) return win[0];
+      else if (win.every((w) => w === win[0])) return win[0];
     }
     return null;
   }
@@ -133,7 +133,7 @@ class Board {
     if (this.state.flat().every((v) => v)) return 0;
     const goalPl = this.getGoalPlayer();
     if (!goalPl) return null;
-    else return goalPl.goalScore;
+    else return goalPl === "Maximizer" ? 1 : -1;
   }
 }
 
@@ -146,7 +146,7 @@ class BoardWithPlayers extends Board {
     this.player1 = new Player("Maximizer", "X", this);
     this.player2 = new Player("Minimizer", "O", this);
 
-    this.player1.hasTurn = true;
+    this.player2.hasTurn = true;
 
     this.player1.addEventListener("just_played", () => {
       this.player2.hasTurn = true;

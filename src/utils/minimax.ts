@@ -39,6 +39,7 @@ class Node {
   board: Board;
   optimalChild: Node | null;
   score: 0 | 1 | -1 | null;
+  staticNodeState: BoardState;
   constructor(
     parent: Node | null,
     children: Node[],
@@ -53,6 +54,7 @@ class Node {
     this.isRoot = !parent;
     this.optimalChild = null;
     this.score = null;
+    this.staticNodeState = board.getState();
   }
 
   createChildren() {
@@ -78,15 +80,11 @@ class Node {
     for (const field of boardFields) {
       if (!state[bMap[field].row][bMap[field].col]) {
         const newBoard = new Board();
-        const player = new Player(
-          nextLevelPlayer.type,
-          nextLevelPlayer.val,
-          newBoard,
-        );
         const branchBoardState: BoardState = [];
         for (const val of state)
-          branchBoardState.push(val.map((v) => v) as Player[] | null[]);
-        branchBoardState[bMap[field].row][bMap[field].col] = player;
+          branchBoardState.push(val.map((v) => v) as PlayerType[] | null[]);
+        branchBoardState[bMap[field].row][bMap[field].col] =
+          nextLevelPlayer.type;
         newBoard.setState(branchBoardState);
         newNodes.push(new Node(this, [], nextLevelPlayer.type, newBoard));
       }
@@ -106,14 +104,20 @@ class Node {
         const prevChScore = prevChild.score;
         const currChScore = currChild.score;
         const player = this.levelPlayer;
-        if (prevChScore !== null && currChScore !== null)
-          return prevChScore > currChScore
-            ? player === "Maximizer"
-              ? prevChild
-              : currChild
-            : player === "Maximizer"
-              ? currChild
-              : prevChild;
+        if (prevChScore !== null && currChScore !== null) {
+          // If they are exactly equal, favor the previously found good path
+          if (prevChScore === currChScore) {
+            return prevChild;
+          }
+
+          // Otherwise, apply standard Max/Min seeking
+          if (player === "Maximizer") {
+            return prevChScore > currChScore ? prevChild : currChild;
+          } else {
+            // Minimizer
+            return prevChScore < currChScore ? prevChild : currChild;
+          }
+        }
         return currChild;
       });
     this.optimalChild = node;
@@ -136,8 +140,8 @@ class MinimaxBot extends Tree {
   }
 
   private getMoveRowCol() {
-    if (!this.nextNode) return null;
-    let map: BoardFieldVal | null = null;
+    if (!this.nextNode) return { row: 1, col: 1 };
+    let map: BoardFieldVal = { row: 1, col: 1 };
     const currFlat = this.currentNode.board.getState().flat();
     const nextFlat = this.nextNode.board.getState().flat();
     for (const [idx, n] of nextFlat.entries()) {
@@ -152,22 +156,11 @@ class MinimaxBot extends Tree {
   }
 
   setNodeFromState(state: BoardState) {
+    const flattened = state.flat();
     const matchedChild = this.currentNode.children.find((child) => {
-      return child.board
-        .getState()
-        .every((c, idx) =>
-          c.every(
-            (innC, innIdx) =>{
-              console.log(idx, innIdx)
-              return (innC !== null && state[idx][innIdx] !== null) ||
-              (innC === null && state[idx][innIdx] === null)
-            }
-          ),
-        );
+      const childFlattened = child.staticNodeState.flat();
+      return childFlattened.every((c, idx) => c === flattened[idx]);
     });
-
-    console.log(state, matchedChild);
-
     if (matchedChild) {
       this.currentNode = matchedChild;
     }
@@ -175,6 +168,7 @@ class MinimaxBot extends Tree {
 
   makeMove() {
     this.computeOptimalPath(this.currentNode);
+    console.log(this.currentNode, this.currentNode.optimalChild);
     this.nextNode = this.currentNode.optimalChild;
     const position = this.getMoveRowCol();
     return position;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import LeafStatePopup from "./LeafStatePopup";
 import { BoardWithPlayers, Player, type BoardFieldVal } from "./utils/board";
 import { MinimaxBot, Node } from "./utils/minimax";
@@ -10,7 +10,6 @@ const minimaxBot = new MinimaxBot(
 );
 
 
-
 const App = () => {
   const [boardState, setBoardState] = useState({
     state: board.getState(),
@@ -19,7 +18,7 @@ const App = () => {
 
   const [currentPlayer, setCurrentPlayer] = useState({
     player: board.getPlayers()[1],
-    idx: 0,
+    idx: 1,
   });
 
   const updateState = () => {
@@ -33,16 +32,16 @@ const App = () => {
 
   const userPlay = (player: Player, position: BoardFieldVal) => {
     player.play(position);
+    minimaxBot.setNodeFromState(board.getState());
     updateState();
     botPlay();
   };
 
   const botPlay = () => {
-    console.log("Bot playing")
-    minimaxBot.setNodeFromState(board.getState());
     const move = minimaxBot.makeMove();
-    console.log(move)
+    console.log(move);
     if (move) minimaxBot.player.play(move);
+    minimaxBot.setNodeFromState(board.getState());
     updateState();
   };
 
@@ -57,10 +56,6 @@ const App = () => {
     setCurrentPlayer({ player: board.getPlayers()[0], idx: 0 });
     setBoardState({ state: board.getState(), value: board.checkStateValue() });
   };
-
-  useEffect(() => {
-    botPlay();
-  }, []);
 
   return (
     <>
@@ -132,12 +127,12 @@ const App = () => {
                       className="absolute inset-0 bg-linear-to-tr from-white/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
                     />
 
-                    {cell?.val === "X" && (
+                    {cell === "Maximizer" && (
                       <span className="text-(--color-player-x) font-black drop-shadow-(--shadow-player-x) transform transition-transform duration-300 hover:scale-110">
                         X
                       </span>
                     )}
-                    {cell?.val === "O" && (
+                    {cell === "Minimizer" && (
                       <span className="text-(--color-player-o) font-black drop-shadow-(--shadow-player-o) transform transition-transform duration-300 hover:scale-110">
                         O
                       </span>
@@ -149,7 +144,10 @@ const App = () => {
           </div>
 
           {/* Action Controls */}
-          <button className="mt-4 px-10 py-4 bg-linear-to-r from-(--btn-from) hover:from-(--btn-hover-from) to-(--btn-to) hover:to-(--btn-hover-to) text-white font-bold rounded-full shadow-lg transition-all duration-300 active:scale-95 tracking-wider uppercase text-sm border border-white/10">
+          <button
+            onClick={botPlay}
+            className="mt-4 px-10 py-4 bg-linear-to-r from-(--btn-from) hover:from-(--btn-hover-from) to-(--btn-to) hover:to-(--btn-hover-to) text-white font-bold rounded-full shadow-lg transition-all duration-300 active:scale-95 tracking-wider uppercase text-sm border border-white/10"
+          >
             Restart Match
           </button>
         </div>
